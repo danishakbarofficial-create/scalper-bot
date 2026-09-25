@@ -9,7 +9,7 @@ Specially tailored for 1-Week live paper testing on AWS EC2.
 - Reward: 1:2.2 RR (1.4x ATR SL)
 - Session: London & New York (07:00 - 20:00 UTC)
 - Saves full trade history to: data/gold_paper_trades.json
-- Telegram notifications built-in with real-time phone alerts
+- 2-Way Interactive Telegram Bot: Ask /status, /balance, /trades anytime!
 =============================================================================
 """
 
@@ -18,6 +18,7 @@ import sys
 import time
 import json
 import datetime
+import threading
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -52,6 +53,13 @@ class GoldLiveTester:
         self.session_start_utc = 7    # 07:00 UTC London Open
         self.session_end_utc = 20     # 20:00 UTC NY Close
         
+        # Real-time state cache for instant Telegram responses
+        self.latest_price = 0.0
+        self.latest_rsi = 50.0
+        self.latest_regime = "SCANNING..."
+        self.latest_atr = 0.0
+        self.last_update_ts = time.time()
+
         # Load or initialize paper state
         self.load_state(initial_balance)
         
@@ -72,6 +80,11 @@ class GoldLiveTester:
                     self.tg_chat_id = str(cfg.get("telegram_chat_id", self.tg_chat_id))
             except Exception:
                 pass
+
+        # Start 2-Way Telegram Command Listener in background thread
+        if self.tg_token:
+            threading.Thread(target=self.telegram_listener_loop, daemon=True).start()
+            print("[+] 2-Way Interactive Telegram Listener started!")
 
     def send_telegram(self, message: str) -> bool:
         if not self.tg_token or not self.tg_chat_id:
@@ -94,6 +107,140 @@ class GoldLiveTester:
         except Exception as e:
             print(f"[!] Telegram connection notice: {e}")
             return False
+
+    def telegram_listener_loop(self):
+        """Continuously listens for incoming Telegram commands from the user (2-Way)"""
+        offset = None
+        while True:
+            try:
+                url = f"https://api.telegram.org/bot{self.tg_token}/getUpdates"
+                params = {"timeout": 20}
+                if offset:
+                    params["offset"] = offset
+                
+                resp = requests.get(url, params=params, timeout=25)
+                data = resp.json()
+                if data.get("ok"):
+                    for update in data.get("result", []):
+                        offset = update["update_id"] + 1
+                        msg = update.get("message", {})
+                        text = msg.get("text", "").strip()
+                        sender_id = str(msg.get("chat", {}).get("id", ""))
+
+                        # Process command only if message is from authorized user
+                        if sender_id == self.tg_chat_id and text:
+                            self.handle_telegram_command(text)
+            except Exception:
+                time.sleep(3)
+
+    def handle_telegram_command(self, cmd: str):
+        cmd = cmd.lower().strip()
+        now_str = get_utc_now().strftime("%H:%M:%S UTC")
+        net_pnl = self.balance - self.initial_balance
+        ret_pct = (net_pnl / self.initial_balance) * 100.0
+        dd = (self.peak_balance - self.balance) / self.peak_balance * 100.0
+
+        if cmd in ["/start", "/help", "help"]:
+            reply = (
+                f"👋 <b>Welcome Danish! 🏆 Gold Bot 2-Way Assistant</b>\n"
+                f"━━━━━━━━━━━━━━━━━━\n"
+                f"Send me any command to get live updates:\n\n"
+                f"📊 <b>/status</b> — Live Gold price, regime & active trade\n"
+                f"💰 <b>/balance</b> — Account Equity, PnL & Drawdown\n"
+                f"🎯 <b>/position</b> — Active trade details\n"
+                f"📜 <b>/trades</b> — History of completed trades\n"
+                f"🏓 <b>/ping</b> — Check server health & uptime"
+            )
+            self.send_telegram(reply)
+
+        elif cmd in ["/status", "status"]:
+            now_hour = get_utc_now().hour
+            in_session = "ACTIVE ✅ (London/NY)" if (self.session_start_utc <= now_hour < self.session_end_utc) else "OFF-HOURS 💤 (Asian Asian)"
+
+            pos_text = "No Open Position (Scanning setups)"
+            if self.position:
+                p = self.position
+                side = p['side']
+                unrealized = (self.latest_price - p['entry_price']) * p['size'] if side == "LONG" else (p['entry_price'] - self.latest_price) * p['size']
+                pos_text = (
+                    f"<b>{side}</b> @ ${p['entry_price']:,.2f}\n"
+                    f"uPnL: <b>${unrealized:+,.2f}</b>\n"
+                    f"SL: ${p['sl']:,.2f} | TP: ${p['tp']:,.2f}"
+                )
+
+            reply = (
+                f"📊 <b>LIVE GOLD BOT STATUS</b> ({now_str})\n"
+                f"━━━━━━━━━━━━━━━━━━\n"
+                f"<b>Gold (PAXG):</b> ${self.latest_price:,.2f}\n"
+                f"<b>Market Regime:</b> {self.latest_regime}\n"
+                f"<b>RSI (14):</b> {self.latest_rsi:.1f}\n"
+                f"<b>Trading Session:</b> {in_session}\n"
+                f"━━━━━━━━━━━━━━━━━━\n"
+                f"<b>Current Equity:</b> ${self.balance:,.2f}\n"
+                f"<b>Net PnL:</b> ${net_pnl:+,.2f} ({ret_pct:+.2f}%)\n"
+                f"<b>Current Drawdown:</b> {dd:.1f}% (Max Cap: {self.max_dd_limit}%)\n"
+                f"━━━━━━━━━━━━━━━━━━\n"
+                f"<b>Trade Status:</b>\n{pos_text}"
+            )
+            self.send_telegram(reply)
+
+        elif cmd in ["/balance", "balance"]:
+            wins = sum(1 for t in self.trades if t['pnl'] > 0)
+            wr = (wins / max(len(self.trades), 1)) * 100.0
+            reply = (
+                f"💰 <b>PORTFOLIO BALANCE & RISK</b>\n"
+                f"━━━━━━━━━━━━━━━━━━\n"
+                f"<b>Initial Balance:</b> ${self.initial_balance:,.2f}\n"
+                f"<b>Current Equity:</b> ${self.balance:,.2f}\n"
+                f"<b>Peak Equity:</b> ${self.peak_balance:,.2f}\n"
+                f"<b>Net PnL:</b> ${net_pnl:+,.2f} ({ret_pct:+.2f}%)\n"
+                f"<b>Max Drawdown:</b> {dd:.1f}% / {self.max_dd_limit}%\n"
+                f"<b>Total Closed Trades:</b> {len(self.trades)} (Win Rate: {wr:.1f}%)"
+            )
+            self.send_telegram(reply)
+
+        elif cmd in ["/position", "/pos", "position"]:
+            if not self.position:
+                self.send_telegram("ℹ️ <b>No open position currently.</b> Bot is actively scanning 15m candles for value pullback.")
+            else:
+                p = self.position
+                side = p['side']
+                unrealized = (self.latest_price - p['entry_price']) * p['size'] if side == "LONG" else (p['entry_price'] - self.latest_price) * p['size']
+                reply = (
+                    f"🎯 <b>ACTIVE POSITION DETAILS</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━\n"
+                    f"<b>Direction:</b> {side}\n"
+                    f"<b>Entry Time:</b> {p['entry_time']}\n"
+                    f"<b>Entry Price:</b> ${p['entry_price']:,.2f}\n"
+                    f"<b>Current Price:</b> ${self.latest_price:,.2f}\n"
+                    f"<b>Stop Loss:</b> ${p['sl']:,.2f}\n"
+                    f"<b>Take Profit:</b> ${p['tp']:,.2f} (1:2.2 RR)\n"
+                    f"<b>Unrealized PnL:</b> ${unrealized:+,.2f}\n"
+                    f"<b>Risk USD:</b> ${p['risk_usd']:.2f} (1.5%)"
+                )
+                self.send_telegram(reply)
+
+        elif cmd in ["/trades", "/history", "trades"]:
+            if not self.trades:
+                self.send_telegram("ℹ️ <b>No trades closed yet.</b> As soon as trades close, history will be shown here.")
+            else:
+                last_5 = self.trades[-5:]
+                lines = []
+                for idx, t in enumerate(reversed(last_5), 1):
+                    emoji = "🟢" if t['pnl'] >= 0 else "🔴"
+                    lines.append(f"{emoji} #{idx} {t['side']} | PnL: <b>${t['pnl']:+,.2f}</b> ({t['pnl_pct']:+.1f}%) | {t['reason']}")
+                history_text = "\n".join(lines)
+                reply = (
+                    f"📜 <b>LAST 5 CLOSED TRADES</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━\n"
+                    f"{history_text}\n"
+                    f"━━━━━━━━━━━━━━━━━━\n"
+                    f"<b>Total Closed:</b> {len(self.trades)}"
+                )
+                self.send_telegram(reply)
+
+        elif cmd in ["/ping", "ping"]:
+            self.send_telegram(f"🏓 <b>Pong!</b> AWS Cloud Server is active 24/7.\nServer Time: {now_str}")
 
     def load_state(self, initial_balance: float):
         if STATE_FILE.exists():
@@ -330,7 +477,7 @@ class GoldLiveTester:
         print(f"  Risk / Trade:     {self.risk_pct}% (Max DD Hard Cap: {self.max_dd_limit}%)")
         print(f"  Risk-to-Reward:   1:{self.rr_ratio} Asymmetric Profit")
         print(f"  Active Session:   07:00 - 20:00 UTC (London & NY)")
-        print(f"  Telegram Alerts:  {'CONNECTED ✅' if self.tg_token else 'DISABLED ❌'}")
+        print(f"  Telegram Alerts:  {'CONNECTED ✅ (2-Way)' if self.tg_token else 'DISABLED ❌'}")
         print(f"  State File:       {STATE_FILE}")
         print("=" * 75 + "\n")
 
@@ -343,7 +490,9 @@ class GoldLiveTester:
             f"<b>Risk Per Trade:</b> 1.5% (Max DD Cap: 11.5%)\n"
             f"<b>Risk / Reward:</b> 1:2.2 RR Asymmetric\n"
             f"<b>Server:</b> AWS EC2 (eu-north-1) 24/7 Live\n"
-            f"<i>You will receive real-time alerts for every entry & exit!</i>"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"💬 <b>2-Way Commands Enabled!</b>\n"
+            f"Send me: /status, /balance, /position, or /trades anytime!"
         )
         if tg_success:
             print("[+] Telegram notification sent successfully to your phone!")
@@ -359,12 +508,19 @@ class GoldLiveTester:
                 # 1. Fetch current price
                 ticker = self.exchange.fetch_ticker(self.symbol)
                 current_price = float(ticker['last'])
+                self.latest_price = current_price
 
                 # 2. Check open position exits
                 self.check_position_exits(current_price)
 
                 # 3. Fetch indicators and scan entry
                 df = self.fetch_market_data()
+                self.latest_rsi = float(df['rsi'].iloc[-1])
+                ema_f = float(df['ema_macro_fast'].iloc[-1])
+                ema_s = float(df['ema_macro_slow'].iloc[-1])
+                self.latest_regime = "BULLISH 📈" if (ema_f > ema_s and current_price > ema_f) else ("BEARISH 📉" if (ema_f < ema_s and current_price < ema_f) else "NEUTRAL / CHOP ⚖️")
+                self.latest_atr = float(df['atr'].iloc[-1])
+
                 self.scan_for_entry(df, current_price)
 
                 # Periodic terminal status (every 60 seconds)
@@ -372,10 +528,6 @@ class GoldLiveTester:
                 if now_ts - last_status_print >= 60:
                     last_status_print = now_ts
                     now_str = get_utc_now().strftime("%H:%M:%S UTC")
-                    last_rsi = df['rsi'].iloc[-1]
-                    ema_f = df['ema_macro_fast'].iloc[-1]
-                    ema_s = df['ema_macro_slow'].iloc[-1]
-                    regime = "BULLISH 📈" if (ema_f > ema_s and current_price > ema_f) else ("BEARISH 📉" if (ema_f < ema_s and current_price < ema_f) else "NEUTRAL / CHOP ⚖️")
                     
                     pos_info = "NO OPEN TRADE (Scanning setups...)"
                     if self.position:
@@ -388,7 +540,7 @@ class GoldLiveTester:
                     ret_pct = (net_pnl / self.initial_balance) * 100.0
                     dd = (self.peak_balance - self.balance) / self.peak_balance * 100.0
 
-                    print(f"[{now_str}] PAXG: ${current_price:,.2f} | Regime: {regime} | RSI: {last_rsi:.1f}")
+                    print(f"[{now_str}] PAXG: ${current_price:,.2f} | Regime: {self.latest_regime} | RSI: {self.latest_rsi:.1f}")
                     print(f"          Equity: ${self.balance:,.2f} (PnL: ${net_pnl:+.2f} / {ret_pct:+.2f}%) | DD: {dd:.1f}% | Trades: {len(self.trades)}")
                     print(f"          Status: {pos_info}\n")
 
