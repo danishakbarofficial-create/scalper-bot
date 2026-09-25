@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MEXC Futures Scalper AI | 20-25% Monthly Target</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Header Bar -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-mark">
+        <span class="logo-icon">⚡</span>
+      </div>
+      <div class="logo-text">
+        <h1>MEXC SCALPER <span class="badge-pro">PRO 25%</span></h1>
+        <p class="subtitle">Autonomous Futures Scalping Engine</p>
+      </div>
+      <div class="connection-status">
+        <span class="pulse-dot" id="ws-pulse"></span>
+        <span id="ws-status-text">Connected</span>
+      </div>
+      <div class="connection-status" id="session-badge" style="border-color: rgba(6, 182, 212, 0.4);">
+        <span id="session-icon">⚡</span>
+        <span id="session-status-text">Active Session (NY/London)</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="mode-pill" id="mode-badge" onclick="toggleTradingMode()">
+        <span class="mode-tag" id="mode-tag">PAPER</span>
+        <span class="mode-desc" id="mode-desc">Simulation ($1,000)</span>
+      </div>
+
+      <button id="btn-toggle-bot" class="btn btn-primary" onclick="toggleBot()">
+        <span id="bot-toggle-icon">▶</span>
+        <span id="bot-toggle-text">START BOT</span>
+      </button>
+
+      <button class="btn btn-secondary" onclick="openSettingsModal()">
+        ⚙ Settings
+      </button>
+
+      <button class="btn btn-danger-outline" onclick="resetPaperAccount()" title="Reset Paper Balance to $1,000">
+        ↺ Reset Sim
+      </button>
+    </div>
+  </header>
+
+  <!-- Top Metrics Bar -->
+  <main class="dashboard-container">
+    <section class="kpi-grid">
+      <!-- Balance Card -->
+      <div class="kpi-card glass-panel">
+        <div class="kpi-header">
+          <span class="kpi-title">ACCOUNT EQUITY</span>
+          <span class="kpi-badge" id="trading-mode-label">PAPER</span>
+        </div>
+        <div class="kpi-value" id="kpi-equity">$1,000.00</div>
+        <div class="kpi-sub">
+          <span>Balance: <strong id="kpi-balance">$1,000.00</strong></span>
+          <span id="kpi-unrealized-badge" class="badge-neutral">$0.00 PnL</span>
+        </div>
+      </div>
+
+      <!-- Daily Target Card (20-25% monthly pace) -->
+      <div class="kpi-card glass-panel highlight-panel">
+        <div class="kpi-header">
+          <span class="kpi-title">TODAY'S TARGET (20-25% MO.)</span>
+          <span class="kpi-target-tag" id="kpi-target-tag">Target: +1.0%</span>
+        </div>
+        <div class="kpi-value" id="kpi-today-pnl">+$0.00 <span class="kpi-unit" id="kpi-today-pct">(+0.00%)</span></div>
+        <div class="progress-container">
+          <div class="progress-bar" id="target-progress-bar" style="width: 0%"></div>
+        </div>
+        <div class="kpi-sub space-between">
+          <span id="target-status-label">Daily Goal Pacing</span>
+          <span id="target-progress-num">0% Reached</span>
+        </div>
+      </div>
+
+      <!-- Win Rate Card -->
+      <div class="kpi-card glass-panel">
+        <div class="kpi-header">
+          <span class="kpi-title">WIN RATE & STATS</span>
+          <span class="kpi-badge badge-cyan" id="kpi-trades-count">0 Trades</span>
+        </div>
+        <div class="kpi-value cyan-text" id="kpi-winrate">0.0%</div>
+        <div class="kpi-sub">
+          <span class="text-green">Won: <strong id="kpi-wins">0</strong></span>
+          <span class="text-red">Lost: <strong id="kpi-losses">0</strong></span>
+          <span>Risk: <strong>1:2.0 RR</strong></span>
+        </div>
+      </div>
+
+      <!-- Risk & Safety Card -->
+      <div class="kpi-card glass-panel">
+        <div class="kpi-header">
+          <span class="kpi-title">CAPITAL PROTECTION</span>
+          <span class="shield-icon">🛡</span>
+        </div>
+        <div class="kpi-value small-val" id="kpi-safety-status">ACTIVE & SECURE</div>
+        <div class="kpi-sub">
+          <span>Killswitch: <strong id="kpi-killswitch-limit">-3.0% Max</strong></span>
+          <span>Leverage: <strong id="kpi-leverage-display">3x Safe</strong></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content Layout -->
+    <div class="main-layout">
+      <!-- Left Column: Positions & Chart -->
+      <div class="content-left">
+        <!-- Open Positions Section -->
+        <div class="glass-panel section-card">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <h2>Open Futures Positions</h2>
+              <span class="count-badge" id="positions-count-badge">0 Active</span>
+            </div>
+            <span class="header-hint">Automated 1.2% TP1 / Trailing Stop</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table" id="positions-table">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Side</th>
+                  <th>Entry Price</th>
+                  <th>Mark Price</th>
+                  <th>Margin</th>
+                  <th>TP1 / TP2</th>
+                  <th>Stop Loss</th>
+                  <th>Unrealized PnL</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="positions-tbody">
+                <tr class="empty-row">
+                  <td colspan="9">No active positions. Bot is scanning the orderbook...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Live Candlestick & Indicator Chart -->
+        <div class="glass-panel section-card">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <h2>Live Scalping Chart</h2>
+              <select id="chart-symbol-select" onchange="loadChartData()" class="custom-select">
+                <option value="BTC-USDT:USDT">BTC/USDT (1m)</option>
+                <option value="ETH-USDT:USDT">ETH/USDT (1m)</option>
+                <option value="SOL-USDT:USDT">SOL/USDT (1m)</option>
+                <option value="DOGE-USDT:USDT">DOGE/USDT (1m)</option>
+              </select>
+            </div>
+            <div class="chart-indicators-legend">
+              <span class="legend-item"><span class="legend-dot dot-yellow"></span> EMA 9</span>
+              <span class="legend-item"><span class="legend-dot dot-blue"></span> EMA 21</span>
+              <span class="legend-item"><span class="legend-dot dot-purple"></span> EMA 50</span>
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="scalperChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Recent Trade History -->
+        <div class="glass-panel section-card">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <h2>Recent Trade History</h2>
+              <span class="count-badge" id="history-count-badge">0 Completed</span>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table" id="history-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Symbol</th>
+                  <th>Side</th>
+                  <th>Entry</th>
+                  <th>Exit</th>
+                  <th>PnL (USDT)</th>
+                  <th>Return</th>
+                  <th>Exit Reason</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody">
+                <tr class="empty-row">
+                  <td colspan="8">No trade history yet. Trades will appear here when closed.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Market Watch & Live Terminal Logs -->
+      <div class="content-right">
+        <!-- Live Market Pairs Scanner -->
+        <div class="glass-panel section-card">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <h2>MEXC Watchlist</h2>
+              <span class="badge-live">LIVE FEED</span>
+            </div>
+          </div>
+          <div class="watchlist-list" id="watchlist-container">
+            <div class="watch-item">
+              <div class="watch-info">
+                <span class="watch-symbol">BTC/USDT</span>
+                <span class="watch-sub">Perpetual</span>
+              </div>
+              <div class="watch-price" id="watch-price-btc">Fetching...</div>
+            </div>
+            <div class="watch-item">
+              <div class="watch-info">
+                <span class="watch-symbol">ETH/USDT</span>
+                <span class="watch-sub">Perpetual</span>
+              </div>
+              <div class="watch-price" id="watch-price-eth">Fetching...</div>
+            </div>
+            <div class="watch-item">
+              <div class="watch-info">
+                <span class="watch-symbol">SOL/USDT</span>
+                <span class="watch-sub">Perpetual</span>
+              </div>
+              <div class="watch-price" id="watch-price-sol">Fetching...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Terminal Logs -->
+        <div class="glass-panel section-card terminal-card">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <h2>Execution Log</h2>
+              <span class="terminal-badge">STDOUT</span>
+            </div>
+            <button class="btn-clear" onclick="clearLogs()">Clear</button>
+          </div>
+          <div class="terminal-container" id="terminal-logs">
+            <div class="log-line log-info"><span class="log-time">[00:00:00]</span> Bot engine initialized. Connected to MEXC swap feeds.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal-box glass-panel">
+      <div class="modal-header">
+        <h2>⚙ Scalping Bot Configuration</h2>
+        <button class="modal-close" onclick="closeSettingsModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form id="settings-form" onsubmit="saveSettings(event)">
+          <div class="form-section-title">Execution Mode & API Keys</div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Trading Mode</label>
+              <select id="set-mode" class="form-input">
+                <option value="PAPER">Paper Trading (Safe Virtual Simulation)</option>
+                <option value="LIVE">Live Trading (Real MEXC Account Funds)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Default Leverage</label>
+              <select id="set-leverage" class="form-input">
+                <option value="2">2x (Ultra Safe)</option>
+                <option value="3">3x (Recommended for 20-25% Target)</option>
+                <option value="5">5x (Aggressive Scalp)</option>
+                <option value="10">10x (High Risk)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>MEXC API Key (Required for Live Mode)</label>
+              <input type="password" id="set-mexc-key" class="form-input" placeholder="Enter your MEXC API Key">
+            </div>
+            <div class="form-group">
+              <label>MEXC API Secret</label>
+              <input type="password" id="set-mexc-secret" class="form-input" placeholder="Enter your MEXC API Secret">
+            </div>
+          </div>
+
+          <div class="form-section-title">20-25% Monthly Target & Risk Controls</div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Daily Profit Target (%)</label>
+              <input type="number" step="0.1" id="set-daily-target" class="form-input" value="1.0">
+              <small class="form-hint">1.0% daily compounds to ~25% monthly</small>
+            </div>
+            <div class="form-group">
+              <label>Daily Max Drawdown Killswitch (%)</label>
+              <input type="number" step="0.5" id="set-daily-loss" class="form-input" value="3.0">
+              <small class="form-hint">Halts bot if daily loss hits this to protect balance</small>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Risk Per Trade (%)</label>
+              <input type="number" step="0.1" id="set-risk-trade" class="form-input" value="1.5">
+              <small class="form-hint">Percentage of equity risked per scalp</small>
+            </div>
+            <div class="form-group">
+              <label>Max Simultaneous Positions</label>
+              <input type="number" id="set-max-pos" class="form-input" value="2">
+              <small class="form-hint">Prevents overtrading</small>
+            </div>
+          </div>
+
+          <div class="form-section-title">Active Volatility Session Guard</div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Session Guard (London & NY Overlap)</label>
+              <select id="set-session-filter" class="form-input">
+                <option value="true">Enabled (Only Trade High Volatility Sessions)</option>
+                <option value="false">Disabled (Trade 24/7 Regardless of Hours)</option>
+              </select>
+              <small class="form-hint">Prevents trading during dead/choppy off-hours</small>
+            </div>
+            <div class="form-group">
+              <label>Session Hours (UTC)</label>
+              <div style="display:flex; gap:8px;">
+                <input type="number" min="0" max="23" id="set-session-start" class="form-input" style="width:50%" value="12" placeholder="Start UTC">
+                <input type="number" min="0" max="23" id="set-session-end" class="form-input" style="width:50%" value="21" placeholder="End UTC">
+              </div>
+              <small class="form-hint">12:00 to 21:00 UTC = 5:00 PM to 2:00 AM PKT</small>
+            </div>
+          </div>
+
+          <div class="form-section-title">Strategy Take-Profit & Stop-Loss</div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Stop Loss (%)</label>
+              <input type="number" step="0.1" id="set-sl" class="form-input" value="0.8">
+            </div>
+            <div class="form-group">
+              <label>Take Profit 1 (%) [Close 50% & SL->BE]</label>
+              <input type="number" step="0.1" id="set-tp1" class="form-input" value="1.2">
+            </div>
+            <div class="form-group">
+              <label>Take Profit 2 (%) [Full Close]</label>
+              <input type="number" step="0.1" id="set-tp2" class="form-input" value="2.4">
+            </div>
+          </div>
+
+          <div class="form-section-title">Telegram Notifications (Optional)</div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Telegram Bot Token</label>
+              <input type="text" id="set-tg-token" class="form-input" placeholder="e.g. 123456789:ABCdef...">
+            </div>
+            <div class="form-group">
+              <label>Telegram Chat ID</label>
+              <input type="text" id="set-tg-chat" class="form-input" placeholder="e.g. 987654321">
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeSettingsModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save & Apply Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "balance": 1015.40685,
+  "positions": {},
+  "history": [
+    {
+      "id": "975cf10c",
+      "symbol": "BTC/USDT:USDT",
+      "side": "long",
+      "entry_price": 85000.0,
+      "exit_price": 87100.0,
+      "margin": 283.33,
+      "leverage": 3,
+      "pnl": 10.41,
+      "pnl_percent": 3.68,
+      "open_time": 1790277501.4825091,
+      "close_time": 1790277501.4829538,
+      "reason": "TAKE_PROFIT_2"
+    }
+  ]
+}

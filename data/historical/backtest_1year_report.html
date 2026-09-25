@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>MEXC Scalper 1-Year Backtest Report</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { background: #0b0f19; color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 2rem; margin: 0; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { color: #10b981; font-size: 1.8rem; margin-bottom: 0.5rem; }
+    .subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 2rem; }
+    .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .kpi-card { background: #131b2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1.2rem; }
+    .kpi-label { font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+    .kpi-val { font-size: 1.6rem; font-weight: 700; color: #10b981; margin: 6px 0; font-family: monospace; }
+    .kpi-sub { font-size: 0.8rem; color: #64748b; }
+    .chart-box { background: #131b2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1.5rem; margin-bottom: 2rem; height: 360px; }
+    table { width: 100%; border-collapse: collapse; background: #131b2e; border-radius: 10px; overflow: hidden; font-size: 0.85rem; margin-bottom: 2rem; }
+    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    th { background: #1a243c; color: #94a3b8; font-weight: 600; }
+    .green { color: #10b981; font-weight: 700; }
+    .red { color: #ef4444; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⚡ MEXC Scalper PRO — 1-Year Backtest Report</h1>
+    <div class="subtitle">Complete 365-Day Historical Simulation (3x Leverage, 15m Trend Pullback + ATR Brackets)</div>
+
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">Initial Capital</div>
+        <div class="kpi-val" style="color:#f8fafc">$1,000.00</div>
+        <div class="kpi-sub">Day 1 Starting Equity</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Final 1-Year Balance</div>
+        <div class="kpi-val">$328.34</div>
+        <div class="kpi-sub">Total Net Gain: +$-671.66</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">1-Year Total Return</div>
+        <div class="kpi-val">+-67.2%</div>
+        <div class="kpi-sub">Avg Monthly: +-5.7% / mo</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Win Rate & Profit Factor</div>
+        <div class="kpi-val" style="color:#06b6d4">22.6%</div>
+        <div class="kpi-sub">Profit Factor: 0.68 | Max DD: 79.67%</div>
+      </div>
+    </div>
+
+    <div class="chart-box">
+      <canvas id="equityChart"></canvas>
+    </div>
+
+    <h2 style="font-size:1.2rem; margin-bottom:1rem;">Month-by-Month Breakdown (12 Months)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Trades</th>
+          <th>Wins</th>
+          <th>Win Rate</th>
+          <th>Net PnL (USDT)</th>
+          <th>Monthly Return</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr>
+          <td><strong>2025-09</strong></td>
+          <td>1</td>
+          <td>0</td>
+          <td>0.0%</td>
+          <td class="red">$-11.08</td>
+          <td class="red">-1.1%</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2025-10</strong></td>
+          <td>54</td>
+          <td>11</td>
+          <td>20.4%</td>
+          <td class="red">$-85.84</td>
+          <td class="red">-8.7%</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2025-11</strong></td>
+          <td>49</td>
+          <td>12</td>
+          <td>24.5%</td>
+          <td class="green">+$0.40</td>
+          <td class="green">+0.1%</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2025-12</strong></td>
+          <td>63</td>
+          <td>12</td>
+          <td>19.0%</td>
+          <td class="red">$-140.80</td>
+          <td class="red">-15.9%</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2026-01</strong></td>
+          <td>62</td>
+          <td>15</td>
+          <td>24.2%</td>
+          <td class="red">$-61.72</td>
+          <td class="red">-8.4%</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2026-02</strong></td>
+          <td>47</td>
+          <td>14</td>
+          <td>29.8%</td>
+          <td class="red">$-21.37</td>
+          <td class="red">-3.2%</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2026-03</strong></td>
+          <td>68</td>
+          <td>11</td>
+          <td>16.2%</td>
+          <td class="red">$-114.64</td>
+          <td class="red">-18.1%</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2026-04</strong></td>
+          <td>61</td>
+          <td>12</td>
+          <td>19.7%</td>
+          <td class="red">$-24.37</td>
+          <td class="red">-4.8%</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2026-05</strong></td>
+          <td>62</td>
+          <td>13</td>
+          <td>21.0%</td>
+          <td class="red">$-41.54</td>
+          <td class="red">-13.3%</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2026-06</strong></td>
+          <td>50</td>
+          <td>16</td>
+          <td>32.0%</td>
+          <td class="red">$-2.40</td>
+          <td class="red">-0.6%</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2026-07</strong></td>
+          <td>81</td>
+          <td>18</td>
+          <td>22.2%</td>
+          <td class="red">$-34.15</td>
+          <td class="red">-12.3%</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2026-08</strong></td>
+          <td>63</td>
+          <td>15</td>
+          <td>23.8%</td>
+          <td class="red">$-36.24</td>
+          <td class="red">-11.4%</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2026-09</strong></td>
+          <td>44</td>
+          <td>10</td>
+          <td>22.7%</td>
+          <td class="red">$-11.96</td>
+          <td class="red">-3.5%</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const ctx = document.getElementById('equityChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['2025-09-30', '2025-10-01', '2025-10-02', '2025-10-03', '2025-10-04', '2025-10-05', '2025-10-06', '2025-10-07', '2025-10-08', '2025-10-09', '2025-10-10', '2025-10-11', '2025-10-12', '2025-10-13', '2025-10-14', '2025-10-15', '2025-10-16', '2025-10-17', '2025-10-18', '2025-10-19', '2025-10-20', '2025-10-21', '2025-10-22', '2025-10-23', '2025-10-24', '2025-10-25', '2025-10-26', '2025-10-27', '2025-10-28', '2025-10-29', '2025-10-30', '2025-10-31', '2025-11-01', '2025-11-02', '2025-11-03', '2025-11-04', '2025-11-05', '2025-11-06', '2025-11-07', '2025-11-08', '2025-11-09', '2025-11-10', '2025-11-11', '2025-11-12', '2025-11-13', '2025-11-14', '2025-11-15', '2025-11-16', '2025-11-17', '2025-11-18', '2025-11-19', '2025-11-20', '2025-11-21', '2025-11-22', '2025-11-23', '2025-11-24', '2025-11-25', '2025-11-26', '2025-11-27', '2025-11-28', '2025-11-29', '2025-11-30', '2025-12-01', '2025-12-02', '2025-12-03', '2025-12-04', '2025-12-05', '2025-12-06', '2025-12-07', '2025-12-08', '2025-12-09', '2025-12-10', '2025-12-11', '2025-12-12', '2025-12-13', '2025-12-14', '2025-12-15', '2025-12-16', '2025-12-17', '2025-12-18', '2025-12-19', '2025-12-20', '2025-12-21', '2025-12-22', '2025-12-23', '2025-12-24', '2025-12-25', '2025-12-26', '2025-12-27', '2025-12-28', '2025-12-29', '2025-12-30', '2025-12-31', '2026-01-01', '2026-01-02', '2026-01-03', '2026-01-04', '2026-01-05', '2026-01-06', '2026-01-07', '2026-01-08', '2026-01-09', '2026-01-10', '2026-01-11', '2026-01-12', '2026-01-13', '2026-01-14', '2026-01-15', '2026-01-16', '2026-01-17', '2026-01-18', '2026-01-19', '2026-01-20', '2026-01-21', '2026-01-22', '2026-01-23', '2026-01-24', '2026-01-25', '2026-01-26', '2026-01-27', '2026-01-28', '2026-01-29', '2026-01-30', '2026-01-31', '2026-02-01', '2026-02-02', '2026-02-03', '2026-02-04', '2026-02-05', '2026-02-06', '2026-02-07', '2026-02-08', '2026-02-09', '2026-02-10', '2026-02-11', '2026-02-12', '2026-02-13', '2026-02-14', '2026-02-15', '2026-02-16', '2026-02-17', '2026-02-18', '2026-02-19', '2026-02-20', '2026-02-21', '2026-02-22', '2026-02-23', '2026-02-24', '2026-02-25', '2026-02-26', '2026-02-27', '2026-02-28', '2026-03-01', '2026-03-02', '2026-03-03', '2026-03-04', '2026-03-05', '2026-03-06', '2026-03-07', '2026-03-08', '2026-03-09', '2026-03-10', '2026-03-11', '2026-03-12', '2026-03-13', '2026-03-14', '2026-03-15', '2026-03-16', '2026-03-17', '2026-03-18', '2026-03-19', '2026-03-20', '2026-03-21', '2026-03-22', '2026-03-23', '2026-03-24', '2026-03-25', '2026-03-26', '2026-03-27', '2026-03-28', '2026-03-29', '2026-03-30', '2026-03-31', '2026-04-01', '2026-04-02', '2026-04-03', '2026-04-04', '2026-04-05', '2026-04-06', '2026-04-07', '2026-04-08', '2026-04-09', '2026-04-10', '2026-04-11', '2026-04-12', '2026-04-13', '2026-04-14', '2026-04-15', '2026-04-16', '2026-04-17', '2026-04-18', '2026-04-19', '2026-04-20', '2026-04-21', '2026-04-22', '2026-04-23', '2026-04-24', '2026-04-25', '2026-04-26', '2026-04-27', '2026-04-28', '2026-04-29', '2026-04-30', '2026-05-01', '2026-05-02', '2026-05-03', '2026-05-04', '2026-05-05', '2026-05-06', '2026-05-07', '2026-05-08', '2026-05-09', '2026-05-10', '2026-05-11', '2026-05-12', '2026-05-13', '2026-05-14', '2026-05-15', '2026-05-16', '2026-05-17', '2026-05-18', '2026-05-19', '2026-05-20', '2026-05-21', '2026-05-22', '2026-05-23', '2026-05-24', '2026-05-25', '2026-05-26', '2026-05-27', '2026-05-28', '2026-05-29', '2026-05-30', '2026-05-31', '2026-06-01', '2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06', '2026-06-07', '2026-06-08', '2026-06-09', '2026-06-10', '2026-06-11', '2026-06-12', '2026-06-13', '2026-06-14', '2026-06-15', '2026-06-16', '2026-06-17', '2026-06-18', '2026-06-19', '2026-06-20', '2026-06-21', '2026-06-22', '2026-06-23', '2026-06-24', '2026-06-25', '2026-06-26', '2026-06-27', '2026-06-28', '2026-06-29', '2026-06-30', '2026-07-01', '2026-07-02', '2026-07-03', '2026-07-04', '2026-07-05', '2026-07-06', '2026-07-07', '2026-07-08', '2026-07-09', '2026-07-10', '2026-07-11', '2026-07-12', '2026-07-13', '2026-07-14', '2026-07-15', '2026-07-16', '2026-07-17', '2026-07-18', '2026-07-19', '2026-07-20', '2026-07-21', '2026-07-22', '2026-07-23', '2026-07-24', '2026-07-25', '2026-07-26', '2026-07-27', '2026-07-28', '2026-07-29', '2026-07-30', '2026-07-31', '2026-08-01', '2026-08-02', '2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07', '2026-08-08', '2026-08-09', '2026-08-10', '2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15', '2026-08-16', '2026-08-17', '2026-08-18', '2026-08-19', '2026-08-20', '2026-08-21', '2026-08-22', '2026-08-23', '2026-08-24', '2026-08-25', '2026-08-26', '2026-08-27', '2026-08-28', '2026-08-29', '2026-08-30', '2026-08-31', '2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04', '2026-09-05', '2026-09-06', '2026-09-07', '2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11', '2026-09-12', '2026-09-13', '2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17', '2026-09-18', '2026-09-19', '2026-09-20', '2026-09-21', '2026-09-22', '2026-09-23'],
+        datasets: [{
+          label: 'Portfolio Equity ($)',
+          data: [np.float64(988.71), np.float64(640.3), np.float64(1010.04), np.float64(994.12), np.float64(987.57), np.float64(982.13), np.float64(987.66), np.float64(980.69), np.float64(995.15), np.float64(978.61), np.float64(989.29), np.float64(912.19), np.float64(987.29), np.float64(983.83), np.float64(973.21), np.float64(960.51), np.float64(984.61), np.float64(984.61), np.float64(975.77), np.float64(975.77), np.float64(975.77), np.float64(959.73), np.float64(968.77), np.float64(968.16), np.float64(952.67), np.float64(618.84), np.float64(947.18), np.float64(931.09), np.float64(902.96), np.float64(742.13), np.float64(892.16), np.float64(892.16), np.float64(899.35), np.float64(578.12), np.float64(896.79), np.float64(912.49), np.float64(888.99), np.float64(582.72), np.float64(874.47), np.float64(568.04), np.float64(873.64), np.float64(879.51), np.float64(879.23), np.float64(879.23), np.float64(884.14), np.float64(906.68), np.float64(899.07), np.float64(913.37), np.float64(929.05), np.float64(929.05), np.float64(910.22), np.float64(910.22), np.float64(932.12), np.float64(920.64), np.float64(932.51), np.float64(904.04), np.float64(577.38), np.float64(922.71), np.float64(594.17), np.float64(900.84), np.float64(895.21), np.float64(883.47), np.float64(904.13), np.float64(891.1), np.float64(903.17), np.float64(891.15), np.float64(902.87), np.float64(586.49), np.float64(899.1), np.float64(881.29), np.float64(867.28), np.float64(856.53), np.float64(822.42), np.float64(835.24), np.float64(539.37), np.float64(542.27), np.float64(816.77), np.float64(520.66), np.float64(790.88), np.float64(701.17), np.float64(757.42), np.float64(749.44), np.float64(742.41), np.float64(748.07), np.float64(745.7), np.float64(735.63), np.float64(739.71), np.float64(480.65), np.float64(475.37), np.float64(735.66), np.float64(735.66), np.float64(725.96), np.float64(732.01), np.float64(722.2), np.float64(729.7), np.float64(721.58), np.float64(714.91), np.float64(723.12), np.float64(722.89), np.float64(469.73), np.float64(724.41), np.float64(713.03), np.float64(459.21), np.float64(704.23), np.float64(704.23), np.float64(698.33), np.float64(711.45), np.float64(456.94), np.float64(702.99), np.float64(453.4), np.float64(694.5), np.float64(687.92), np.float64(691.95), np.float64(676.5), np.float64(678.29), np.float64(686.49), np.float64(687.69), np.float64(693.05), np.float64(693.05), np.float64(436.56), np.float64(671.63), np.float64(673.76), np.float64(661.21), np.float64(661.21), np.float64(639.41), np.float64(629.54), np.float64(637.69), np.float64(650.96), np.float64(657.17), np.float64(657.17), np.float64(648.04), np.float64(638.44), np.float64(635.39), np.float64(415.46), np.float64(650.55), np.float64(665.91), np.float64(660.0), np.float64(548.65), np.float64(662.3), np.float64(656.22), np.float64(646.08), np.float64(533.99), np.float64(630.19), np.float64(444.04), np.float64(535.46), np.float64(615.36), np.float64(622.0), np.float64(628.72), np.float64(638.26), np.float64(633.02), np.float64(627.98), np.float64(633.77), np.float64(625.91), np.float64(618.71), np.float64(610.14), np.float64(621.89), np.float64(621.7), np.float64(624.84), np.float64(631.13), np.float64(524.7), np.float64(512.28), np.float64(606.0), np.float64(496.39), np.float64(398.59), np.float64(593.69), np.float64(590.57), np.float64(585.8), np.float64(595.84), np.float64(585.06), np.float64(575.52), np.float64(570.62), np.float64(364.52), np.float64(548.31), np.float64(353.66), np.float64(538.03), np.float64(533.09), np.float64(539.13), np.float64(535.52), np.float64(541.14), np.float64(531.9), np.float64(532.72), np.float64(521.98), np.float64(510.93), np.float64(520.41), np.float64(525.15), np.float64(521.43), np.float64(516.81), np.float64(516.3), np.float64(512.51), np.float64(512.51), np.float64(505.36), np.float64(326.71), np.float64(327.23), np.float64(507.94), np.float64(503.83), np.float64(495.48), np.float64(500.41), np.float64(500.25), np.float64(507.43), np.float64(512.47), np.float64(424.39), np.float64(516.77), np.float64(510.01), np.float64(493.79), np.float64(498.94), np.float64(498.63), np.float64(322.2), np.float64(493.73), np.float64(492.32), np.float64(319.24), np.float64(480.12), np.float64(480.12), np.float64(311.98), np.float64(477.19), np.float64(391.63), np.float64(393.57), np.float64(307.41), np.float64(480.01), np.float64(314.87), np.float64(480.87), np.float64(482.71), np.float64(483.71), np.float64(485.25), np.float64(474.22), np.float64(474.22), np.float64(475.88), np.float64(470.1), np.float64(475.74), np.float64(475.74), np.float64(475.29), np.float64(471.25), np.float64(301.96), np.float64(458.84), np.float64(458.7), np.float64(450.96), np.float64(450.96), np.float64(448.19), np.float64(442.57), np.float64(365.68), np.float64(447.55), np.float64(440.49), np.float64(438.04), np.float64(285.1), np.float64(432.51), np.float64(432.51), np.float64(439.08), np.float64(444.94), np.float64(455.91), np.float64(466.32), np.float64(362.78), np.float64(459.2), np.float64(376.15), np.float64(451.75), np.float64(458.29), np.float64(464.84), np.float64(457.34), np.float64(460.98), np.float64(464.97), np.float64(471.32), np.float64(306.26), np.float64(459.8), np.float64(455.71), np.float64(457.84), np.float64(453.31), np.float64(376.06), np.float64(449.56), np.float64(454.3), np.float64(458.88), np.float64(298.17), np.float64(445.61), np.float64(446.41), np.float64(437.92), np.float64(379.1), np.float64(276.47), np.float64(425.38), np.float64(276.9), np.float64(435.22), np.float64(432.26), np.float64(433.43), np.float64(424.07), np.float64(414.5), np.float64(411.09), np.float64(260.82), np.float64(395.31), np.float64(255.65), np.float64(395.78), np.float64(405.23), np.float64(258.98), np.float64(394.11), np.float64(391.88), np.float64(398.88), np.float64(394.01), np.float64(393.76), np.float64(323.2), np.float64(395.14), np.float64(399.77), np.float64(397.4), np.float64(399.24), np.float64(397.94), np.float64(399.28), np.float64(395.95), np.float64(396.31), np.float64(256.15), np.float64(252.04), np.float64(249.04), np.float64(383.13), np.float64(385.25), np.float64(383.36), np.float64(246.03), np.float64(370.38), np.float64(306.8), np.float64(369.24), np.float64(369.24), np.float64(370.48), np.float64(368.69), np.float64(372.08), np.float64(372.76), np.float64(370.83), np.float64(370.71), np.float64(369.04), np.float64(238.58), np.float64(238.59), np.float64(367.74), np.float64(368.62), np.float64(372.56), np.float64(242.09), np.float64(247.01), np.float64(244.44), np.float64(371.84), np.float64(366.91), np.float64(359.79), np.float64(369.93), np.float64(360.23), np.float64(354.19), np.float64(350.25), np.float64(343.35), np.float64(346.52), np.float64(347.21), np.float64(347.21), np.float64(342.18), np.float64(340.87), np.float64(330.87), np.float64(328.61), np.float64(328.4), np.float64(271.25), np.float64(328.93), np.float64(211.76), np.float64(322.37), np.float64(322.26), np.float64(323.21), np.float64(324.42), np.float64(319.42), np.float64(208.33), np.float64(326.76), np.float64(322.37), np.float64(208.16), np.float64(326.26), np.float64(268.58), np.float64(328.34)],
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          fill: true,
+          borderWidth: 2,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { position: 'right', grid: { color: 'rgba(255,255,255,0.06)' } }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

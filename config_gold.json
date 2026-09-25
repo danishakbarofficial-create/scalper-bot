@@ -1,0 +1,20 @@
+{
+    "bot_name": "Gold Quant Scalper Pro (Prop-Firm Edition)",
+    "symbol": "PAXG/USDT",
+    "description": "Institutional 15M Macro Trend Pullback Scalper for Gold with Strict 12% Max DD Cap",
+    "timeframe": "15m",
+    "leverage": 5,
+    "risk_per_trade_pct": 1.5,
+    "max_drawdown_limit_pct": 11.5,
+    "daily_max_loss_pct": 2.5,
+    "rr_ratio": 2.2,
+    "sl_atr_mult": 1.4,
+    "rsi_oversold": 38.0,
+    "rsi_overbought": 62.0,
+    "min_adx": 20.0,
+    "session_start_utc": 7,
+    "session_end_utc": 20,
+    "maker_fee": 0.0,
+    "target_monthly_return_pct": "5% - 8%",
+    "expected_max_drawdown_pct": "11.7% (Hard Capped at 11.5%)"
+}

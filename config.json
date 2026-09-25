@@ -1,0 +1,29 @@
+{
+  "trading_mode": "PAPER",
+  "mexc_api_key": "",
+  "mexc_api_secret": "",
+  "symbols": [
+    "ETH/USDT:USDT"
+  ],
+  "timeframe": "15m",
+  "leverage": 3,
+  "risk_per_trade_percent": 1.5,
+  "max_open_positions": 1,
+  "daily_profit_target_percent": 2.0,
+  "daily_max_loss_percent": 3.0,
+  "sl_atr_mult": 1.4,
+  "rr_ratio": 2.0,
+  "use_limit_orders": true,
+  "auto_compounding": true,
+  "enable_session_filter": true,
+  "session_start_utc": 8,
+  "session_end_utc": 22,
+  "cooldown_seconds": 180,
+  "telegram_bot_token": "",
+  "telegram_chat_id": "",
+  "paper_initial_balance": 200.0,
+  "bot_active": false,
+  "min_adx_threshold": 22.0,
+  "enable_freeroll_be": false,
+  "enable_shock_absorber": false
+}
