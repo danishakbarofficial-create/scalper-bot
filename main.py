@@ -1,8 +1,9 @@
+import os
+import sys
 import uvicorn
 import webbrowser
 import threading
 import time
-import sys
 
 def open_browser():
     time.sleep(1.5)
@@ -16,8 +17,14 @@ if __name__ == "__main__":
     print("      URL:    http://localhost:8000")
     print("=" * 65)
 
-    # Launch browser automatically
-    threading.Thread(target=open_browser, daemon=True).start()
+    # Launch browser automatically if graphical display exists
+    try:
+        if "DISPLAY" in os.environ or sys.platform.startswith("win"):
+            threading.Thread(target=open_browser, daemon=True).start()
+    except Exception:
+        pass
 
-    # Run FastAPI server
-    uvicorn.run("backend.app:app", host="127.0.0.1", port=8000, log_level="info")
+    # Run FastAPI server accessible both locally and over VPS IP
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("backend.app:app", host=host, port=port, log_level="info")
