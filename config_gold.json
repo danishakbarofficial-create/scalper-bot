@@ -16,5 +16,7 @@
     "session_end_utc": 20,
     "maker_fee": 0.0,
     "target_monthly_return_pct": "5% - 8%",
-    "expected_max_drawdown_pct": "11.7% (Hard Capped at 11.5%)"
+    "expected_max_drawdown_pct": "11.7% (Hard Capped at 11.5%)",
+    "telegram_bot_token": "7937024725:AAGepV1nIkYJYPtM-xRiZxh8UpVPZUfmH_g",
+    "telegram_chat_id": "7396366547"
 }

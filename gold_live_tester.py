@@ -9,7 +9,7 @@ Specially tailored for 1-Week live paper testing on AWS EC2.
 - Reward: 1:2.2 RR (1.4x ATR SL)
 - Session: London & New York (07:00 - 20:00 UTC)
 - Saves full trade history to: data/gold_paper_trades.json
-- Telegram notifications optional (auto-detects if configured in .env or config_gold.json)
+- Telegram notifications built-in with real-time phone alerts
 =============================================================================
 """
 
@@ -34,6 +34,12 @@ DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 STATE_FILE = DATA_DIR / "gold_paper_trades.json"
 CONFIG_FILE = BASE_DIR / "config_gold.json"
+
+def get_utc_now():
+    return datetime.datetime.now(datetime.timezone.utc)
+
+def get_utc_str():
+    return get_utc_now().strftime("%Y-%m-%d %H:%M:%S UTC")
 
 class GoldLiveTester:
     def __init__(self, initial_balance: float = 1000.0):
@@ -63,18 +69,31 @@ class GoldLiveTester:
                 with open(CONFIG_FILE, "r") as f:
                     cfg = json.load(f)
                     self.tg_token = cfg.get("telegram_bot_token", self.tg_token)
-                    self.tg_chat_id = cfg.get("telegram_chat_id", self.tg_chat_id)
+                    self.tg_chat_id = str(cfg.get("telegram_chat_id", self.tg_chat_id))
             except Exception:
                 pass
 
-    def send_telegram(self, message: str):
-        if self.tg_token and self.tg_chat_id:
-            try:
-                url = f"https://api.telegram.org/bot{self.tg_token}/sendMessage"
-                payload = {"chat_id": self.tg_chat_id, "text": message, "parse_mode": "HTML"}
-                requests.post(url, json=payload, timeout=5)
-            except Exception:
-                pass
+    def send_telegram(self, message: str) -> bool:
+        if not self.tg_token or not self.tg_chat_id:
+            return False
+        try:
+            url = f"https://api.telegram.org/bot{self.tg_token}/sendMessage"
+            payload = {
+                "chat_id": self.tg_chat_id,
+                "text": message,
+                "parse_mode": "HTML"
+            }
+            res = requests.post(url, json=payload, timeout=8)
+            res_json = res.json()
+            if res.status_code == 200 and res_json.get("ok"):
+                return True
+            else:
+                desc = res_json.get("description", "Unknown error")
+                print(f"[!] Telegram notice: {desc}")
+                return False
+        except Exception as e:
+            print(f"[!] Telegram connection notice: {e}")
+            return False
 
     def load_state(self, initial_balance: float):
         if STATE_FILE.exists():
@@ -108,7 +127,7 @@ class GoldLiveTester:
             "total_trades": len(self.trades),
             "position": self.position,
             "trades": self.trades,
-            "last_update": datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            "last_update": get_utc_str()
         }
         with open(STATE_FILE, "w") as f:
             json.dump(data, f, indent=4)
@@ -176,7 +195,7 @@ class GoldLiveTester:
             trade_record = {
                 "side": side,
                 "entry_time": entry_time,
-                "exit_time": datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+                "exit_time": get_utc_str(),
                 "entry_price": entry_price,
                 "exit_price": exit_price,
                 "pnl": round(pnl, 2),
@@ -192,9 +211,11 @@ class GoldLiveTester:
             emoji = "🟢" if pnl >= 0 else "🔴"
             msg = (
                 f"{emoji} <b>GOLD BOT: {reason}</b>\n"
-                f"Side: {side} @ ${exit_price:,.2f}\n"
-                f"Trade PnL: ${pnl:+,.2f} ({pnl_pct:+.2f}%)\n"
-                f"New Balance: ${self.balance:,.2f}"
+                f"━━━━━━━━━━━━━━━━━━\n"
+                f"<b>Side:</b> {side} Closed @ ${exit_price:,.2f}\n"
+                f"<b>Trade PnL:</b> ${pnl:+,.2f} ({pnl_pct:+.2f}%)\n"
+                f"<b>New Balance:</b> ${self.balance:,.2f}\n"
+                f"<b>Total Closed Trades:</b> {len(self.trades)}"
             )
             print(f"\n[!] {msg}\n")
             self.send_telegram(msg)
@@ -209,7 +230,7 @@ class GoldLiveTester:
             print(f"[!] 🛡️ Max Drawdown Cap reached ({dd:.2f}% >= {self.max_dd_limit}%). Bot paused for capital preservation.")
             return
 
-        now = datetime.datetime.utcnow()
+        now = get_utc_now()
         current_hour = now.hour
 
         # Session Filter (London & NY: 07:00 - 20:00 UTC)
@@ -245,7 +266,7 @@ class GoldLiveTester:
 
                 self.position = {
                     "side": "LONG",
-                    "entry_time": now.strftime("%Y-%m-%d %H:%M:%S UTC"),
+                    "entry_time": get_utc_str(),
                     "entry_price": round(price, 2),
                     "sl": round(sl, 2),
                     "tp": round(tp, 2),
@@ -254,11 +275,14 @@ class GoldLiveTester:
                 }
                 self.save_state()
                 msg = (
-                    f"🚀 <b>GOLD BOT: LONG ENTERED</b>\n"
-                    f"Symbol: {self.symbol} @ ${price:,.2f}\n"
-                    f"Stop Loss: ${sl:,.2f} | Take Profit: ${tp:,.2f} (1:2.2 RR)\n"
-                    f"Risk Amount: ${dollar_risk:,.2f} (1.5% of Equity)\n"
-                    f"Qty: {qty:.4f} oz"
+                    f"🚀 <b>GOLD BOT: NEW LONG POSITION</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━\n"
+                    f"<b>Asset:</b> {self.symbol} (Gold)\n"
+                    f"<b>Entry Price:</b> ${price:,.2f}\n"
+                    f"<b>Stop Loss:</b> ${sl:,.2f}\n"
+                    f"<b>Take Profit:</b> ${tp:,.2f} (1:2.2 RR 🎯)\n"
+                    f"<b>Risk Amount:</b> ${dollar_risk:,.2f} (1.5% Equity)\n"
+                    f"<b>Position Qty:</b> {qty:.4f} oz"
                 )
                 print(f"\n[+] {msg}\n")
                 self.send_telegram(msg)
@@ -275,7 +299,7 @@ class GoldLiveTester:
 
                 self.position = {
                     "side": "SHORT",
-                    "entry_time": now.strftime("%Y-%m-%d %H:%M:%S UTC"),
+                    "entry_time": get_utc_str(),
                     "entry_price": round(price, 2),
                     "sl": round(sl, 2),
                     "tp": round(tp, 2),
@@ -284,11 +308,14 @@ class GoldLiveTester:
                 }
                 self.save_state()
                 msg = (
-                    f"🔻 <b>GOLD BOT: SHORT ENTERED</b>\n"
-                    f"Symbol: {self.symbol} @ ${price:,.2f}\n"
-                    f"Stop Loss: ${sl:,.2f} | Take Profit: ${tp:,.2f} (1:2.2 RR)\n"
-                    f"Risk Amount: ${dollar_risk:,.2f} (1.5% of Equity)\n"
-                    f"Qty: {qty:.4f} oz"
+                    f"🔻 <b>GOLD BOT: NEW SHORT POSITION</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━\n"
+                    f"<b>Asset:</b> {self.symbol} (Gold)\n"
+                    f"<b>Entry Price:</b> ${price:,.2f}\n"
+                    f"<b>Stop Loss:</b> ${sl:,.2f}\n"
+                    f"<b>Take Profit:</b> ${tp:,.2f} (1:2.2 RR 🎯)\n"
+                    f"<b>Risk Amount:</b> ${dollar_risk:,.2f} (1.5% Equity)\n"
+                    f"<b>Position Qty:</b> {qty:.4f} oz"
                 )
                 print(f"\n[+] {msg}\n")
                 self.send_telegram(msg)
@@ -298,21 +325,34 @@ class GoldLiveTester:
         print("      🏆 GOLD QUANT SCALPER — 24/7 PAPER TESTING ENGINE ACTIVE")
         print("      Tracking Real-Time Gold (PAXG/USDT) via Binance Live Stream")
         print("=" * 75)
-        print(f"  Initial Equity:  ${self.initial_balance:,.2f}")
-        print(f"  Current Equity:  ${self.balance:,.2f}")
-        print(f"  Risk / Trade:    {self.risk_pct}% (Max DD Hard Cap: {self.max_dd_limit}%)")
-        print(f"  Risk-to-Reward:  1:{self.rr_ratio} Asymmetric Profit")
-        print(f"  Active Session:  07:00 - 20:00 UTC (London & NY)")
-        print(f"  State File:      {STATE_FILE}")
+        print(f"  Initial Equity:   ${self.initial_balance:,.2f}")
+        print(f"  Current Equity:   ${self.balance:,.2f}")
+        print(f"  Risk / Trade:     {self.risk_pct}% (Max DD Hard Cap: {self.max_dd_limit}%)")
+        print(f"  Risk-to-Reward:   1:{self.rr_ratio} Asymmetric Profit")
+        print(f"  Active Session:   07:00 - 20:00 UTC (London & NY)")
+        print(f"  Telegram Alerts:  {'CONNECTED ✅' if self.tg_token else 'DISABLED ❌'}")
+        print(f"  State File:       {STATE_FILE}")
         print("=" * 75 + "\n")
 
-        self.send_telegram(
-            f"🏆 <b>GOLD QUANT BOT STARTED (1-Week Paper Test)</b>\n"
-            f"Capital: ${self.balance:,.2f} | Risk/Trade: 1.5%\n"
-            f"Server: AWS Cloud (eu-north-1) 24/7 Active"
+        # Send Telegram startup notification
+        tg_success = self.send_telegram(
+            f"🏆 <b>GOLD QUANT BOT ACTIVATED!</b>\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"<b>Mode:</b> 1-Week Live Forward Test\n"
+            f"<b>Starting Balance:</b> ${self.balance:,.2f}\n"
+            f"<b>Risk Per Trade:</b> 1.5% (Max DD Cap: 11.5%)\n"
+            f"<b>Risk / Reward:</b> 1:2.2 RR Asymmetric\n"
+            f"<b>Server:</b> AWS EC2 (eu-north-1) 24/7 Live\n"
+            f"<i>You will receive real-time alerts for every entry & exit!</i>"
         )
+        if tg_success:
+            print("[+] Telegram notification sent successfully to your phone!")
+        else:
+            if self.tg_token:
+                print("[!] Note: Make sure you have opened @MyGoldTradingBotf_bot on Telegram and pressed START.")
 
         last_status_print = 0
+        last_heartbeat_time = time.time()
 
         while True:
             try:
@@ -331,13 +371,13 @@ class GoldLiveTester:
                 now_ts = time.time()
                 if now_ts - last_status_print >= 60:
                     last_status_print = now_ts
-                    now_str = datetime.datetime.utcnow().strftime("%H:%M:%S UTC")
+                    now_str = get_utc_now().strftime("%H:%M:%S UTC")
                     last_rsi = df['rsi'].iloc[-1]
                     ema_f = df['ema_macro_fast'].iloc[-1]
                     ema_s = df['ema_macro_slow'].iloc[-1]
                     regime = "BULLISH 📈" if (ema_f > ema_s and current_price > ema_f) else ("BEARISH 📉" if (ema_f < ema_s and current_price < ema_f) else "NEUTRAL / CHOP ⚖️")
                     
-                    pos_info = "NO OPEN TRADE (Scanning)"
+                    pos_info = "NO OPEN TRADE (Scanning setups...)"
                     if self.position:
                         p = self.position
                         side = p['side']
@@ -351,6 +391,20 @@ class GoldLiveTester:
                     print(f"[{now_str}] PAXG: ${current_price:,.2f} | Regime: {regime} | RSI: {last_rsi:.1f}")
                     print(f"          Equity: ${self.balance:,.2f} (PnL: ${net_pnl:+.2f} / {ret_pct:+.2f}%) | DD: {dd:.1f}% | Trades: {len(self.trades)}")
                     print(f"          Status: {pos_info}\n")
+
+                # Heartbeat to Telegram every 6 hours
+                if now_ts - last_heartbeat_time >= 21600:
+                    last_heartbeat_time = now_ts
+                    net_pnl = self.balance - self.initial_balance
+                    ret_pct = (net_pnl / self.initial_balance) * 100.0
+                    self.send_telegram(
+                        f"📊 <b>GOLD BOT 6-HOUR STATUS REPORT</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━\n"
+                        f"<b>Balance:</b> ${self.balance:,.2f}\n"
+                        f"<b>Net PnL:</b> ${net_pnl:+,.2f} ({ret_pct:+.2f}%)\n"
+                        f"<b>Completed Trades:</b> {len(self.trades)}\n"
+                        f"<b>Bot Status:</b> 24/7 Healthy & Scanning"
+                    )
 
                 time.sleep(15)  # Poll every 15 seconds
 
